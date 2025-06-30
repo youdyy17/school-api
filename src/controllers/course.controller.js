@@ -46,14 +46,39 @@ export const createCourse = async (req, res) => {
  *   get:
  *     summary: Get all courses
  *     tags: [Courses]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 10 }
+ *         description: Number of items per page
  *     responses:
  *       200:
  *         description: List of courses
  */
 export const getAllCourses = async (req, res) => {
+
+    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page) || 1;
+
+    const total = await db.Course.count();
+
     try {
-        const courses = await db.Course.findAll({ include: [db.Student, db.Teacher] });
-        res.json(courses);
+        const courses = await db.Course.findAll(
+            {
+                // include: [db.Student, db.Teacher],
+                limit: limit, offset: (page - 1) * limit
+            }
+        );
+        res.json({
+            total: total,
+            page: page,
+            data: courses,
+            totalPages: Math.ceil(total / limit),
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

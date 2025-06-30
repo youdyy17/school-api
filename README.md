@@ -59,7 +59,7 @@ Visit: [http://localhost:3000/docs](http://localhost:3000/api-docs)
 
 ```
 .
-├── app.js
+├── index.js
 ├── config
 │   └── swagger.js
 ├── controllers
