@@ -22,7 +22,7 @@ This is a RESTful API built using **Express.js**, **Sequelize ORM**, and **MySQL
 ### 1. Clone the Repo
 
 ```bash
-git clone https://github.com/your-username/school-api.git
+git clone https://github.com/KimangKhenng/school-api.git
 cd school-api
 ```
 
