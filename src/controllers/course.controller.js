@@ -67,6 +67,13 @@ export const createCourse = async (req, res) => {
            type: string
            enum: [createdAt, name, email] # Add all sortable fields here
            default: createdAt
+           parameters:
+         - in: query
+           name: populate
+           schema:
+           type: string
+           example: teacherId,students
+           description: "Comma-separated list of related models to include (e.g., teacherId, students)"
  *     responses:
  *       200:
  *         description: List of courses
@@ -79,15 +86,23 @@ export const getAllCourses = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const sortOrder = req.query.sort === 'asc'?'ASC' : 'DESC';
     const sortBy = req.query.sortBy || 'createdAt';
-    const allowedFields = ['createdAt', 'title', 'description', 'TeacherId'].includes(sortBy) ? sortBy : 'createdAt';
-    const total = await db.Course.count();
-
+    const populate = req.query.populate ? req.query.populate.split(',') : [];
+    const allowRelations = {
+        teacherId: { model: db.Teacher , as: 'teacher' },
+        students: { model: db.Student, as: 'students' }
+    };
     try {
         const courses = await db.Course.findAll(
             {
                 // include: [db.Student, db.Teacher],
                 limit: limit, offset: (page - 1) * limit,
-                order: [[sortBy, sortOrder]]
+                order: [[sortBy, sortOrder]],
+                include: populate.map((relation) => {
+                    if (allowRelations[relation]) {
+                        return allowRelations[relation];
+                    }
+                    return null; // Ignore unknown relations
+                }).filter(Boolean)
             }
         );
         res.json({
