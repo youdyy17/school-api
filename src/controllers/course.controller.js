@@ -1,3 +1,4 @@
+import { DESCRIBE } from 'sequelize/lib/query-types';
 import db from '../models/index.js';
 
 /**
@@ -55,6 +56,17 @@ export const createCourse = async (req, res) => {
  *         name: limit
  *         schema: { type: integer, default: 10 }
  *         description: Number of items per page
+ *       - in: query
+ *         name: sort
+ *         enum: [asc,desc]
+ *         default: desc
+ *         description: "Sort order for results. asc = oldest first, desc = newest first. Sorted by created time."
+ *       - in: query
+           name: sortBy
+           schema:
+           type: string
+           enum: [createdAt, name, email] # Add all sortable fields here
+           default: createdAt
  *     responses:
  *       200:
  *         description: List of courses
@@ -65,14 +77,17 @@ export const getAllCourses = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     // which page to take
     const page = parseInt(req.query.page) || 1;
-
+    const sortOrder = req.query.sort === 'asc'?'ASC' : 'DESC';
+    const sortBy = req.query.sortBy || 'createdAt';
+    const allowedFields = ['createdAt', 'title', 'description', 'TeacherId'].includes(sortBy) ? sortBy : 'createdAt';
     const total = await db.Course.count();
 
     try {
         const courses = await db.Course.findAll(
             {
                 // include: [db.Student, db.Teacher],
-                limit: limit, offset: (page - 1) * limit
+                limit: limit, offset: (page - 1) * limit,
+                order: [[sortBy, sortOrder]]
             }
         );
         res.json({

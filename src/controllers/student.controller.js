@@ -22,14 +22,47 @@ export const createStudent = async (req, res) => {
  *   get:
  *     summary: Get all students
  *     tags: [Students]
+ *     parameters: 
+ *       - in: query
+ *         name: page
+ *         schema: { type:integer, default:1 }
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 100}
+ *         description: Number of items per page
+ *       - in: query
+ *         name: sort
+ *         enum: [asc,desc]
+ *         default: desc
+ *         description: "Sort order for results. asc = oldest first, desc = newest first. Sorted by created time."
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, name, email] # Add all sortable fields here
+ *           default: createdAt
  *     responses:
  *       200:
  *         description: List of students
  */
 export const getAllStudents = async (req, res) => {
+    const limit = parseInt(req.query.limit) || 200;
+    const total = await db.Student.count();
+
+    const page = parseInt(req.query.page) || 1;
+    const sortOrder = req.query.sort === 'asc' ? 'ASC' : 'DESC';
+    const sortBy = req.query.sortBy || 'createdAt';
     try {
-        const students = await db.Student.findAll({ include: db.Course });
+        const students = await db.Student.findAll(
+            {
+                include: db.Course,
+                limit: limit,
+                offset: (page - 1) * limit,
+                order: [[sortBy, sortOrder]]
+            });
         res.json(students);
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

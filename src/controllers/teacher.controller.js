@@ -44,13 +44,44 @@ export const createTeacher = async (req, res) => {
  *   get:
  *     summary: Get all teachers
  *     tags: [Teachers]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 10 }
+ *         description: Number of items per page
+ *       - in: query
+ *         name: sort
+ *         enum: [asc,desc]
+ *         default: desc
+ *         description: "Sort order for results. asc = oldest first, desc = newest first. Sorted by created time."
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, name, email] # Add all sortable fields here
+ *           default: createdAt
  *     responses:
  *       200:
  *         description: List of teachers
  */
 export const getAllTeachers = async (req, res) => {
+    const limit = parseInt (req.query.limit) || 10;
+    const total = await db.Student.count();
+    const page = parseInt(req.query.page) || 1;
+    const sortOrder = req.query.sort === 'asc' ? 'ASC' : 'DESC';
+    const sortBy = req.query.sortBy || 'createdAt';
     try {
-        const teachers = await db.Teacher.findAll({ include: db.Course });
+        const teachers = await db.Teacher.findAll(
+            { 
+                include: db.Course,
+                limit: limit,
+                offset: (page-1) * limit,
+                order: [[sortBy, sortOrder]]
+            });
         res.json(teachers);
     } catch (err) {
         res.status(500).json({ error: err.message });
